@@ -143,6 +143,7 @@ module Stoffle
 
     def interpret_function_definition(fn_def)
       env[fn_def.function_name_as_str] = fn_def
+      ":#{fn_def.function_name_as_str}"
     end
 
     def interpret_function_call(fn_call)

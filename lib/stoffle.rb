@@ -1,3 +1,4 @@
+require "readline"
 require 'pathname'
 require 'active_support'
 require 'active_support/core_ext/string/inflections'
@@ -31,3 +32,28 @@ require_relative 'stoffle/ast/function_definition'
 require_relative 'stoffle/ast/function_call'
 require_relative 'stoffle/runtime/stack_frame'
 require_relative 'stoffle/interpreter'
+
+
+module Stoffle
+  def self.run_prompt
+    interpreter = Stoffle::Interpreter.new
+    while buf = Readline.readline("> ", true)
+      begin
+        puts "=> #{run(buf, interpreter)}"
+      rescue => e
+        puts e.message
+      end
+    end
+  end
+
+  def self.run_file(file)
+    file_content = File.read file
+    run(file_content)
+  end
+
+  def self.run(source, interpreter = Stoffle::Interpreter.new)
+    lexer = Stoffle::Lexer.new(source)
+    parser = Stoffle::Parser.new(lexer.start_tokenization)
+    interpreter.interpret(parser.parse)
+  end
+end

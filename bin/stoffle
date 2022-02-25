@@ -1,0 +1,13 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+require File.expand_path("../lib/stoffle", __dir__)
+
+case ARGV.count
+when 0
+  Stoffle.run_prompt
+when 1
+  Stoffle.run_file(ARGV[0])
+else
+  Stoffle.print_usage
+  exit(64)
+end
