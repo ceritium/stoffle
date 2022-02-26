@@ -1,3 +1,0 @@
-if nil
-  println("This should not be printed.")
-end

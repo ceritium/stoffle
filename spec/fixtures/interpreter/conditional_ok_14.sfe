@@ -1,3 +1,0 @@
-if false and println("Did not short-circuit.")
-  println("Hey there!")
-end

@@ -1,5 +1,0 @@
-my_fn()
-
-fn my_fn
-  "my_fn was called."
-end

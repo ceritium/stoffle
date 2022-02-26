@@ -1,9 +1,8 @@
 module Stoffle
   class Lexer
+    COMMENT = "#"
     WHITESPACE = [' ', "\r", "\t"].freeze
-    ONE_CHAR_LEX = ['{', '}', '(', ')', ':', ',', '.', '-', '+', '/', '*'].freeze
-    ONE_OR_TWO_CHAR_LEX = ['!', '=', '>', '<'].freeze
-    KEYWORD = ['fun', 'and', 'else', 'end', 'false', 'fn', 'if', 'nil', 'or', 'return', 'true', 'while'].freeze
+    ONE_CHAR_LEX = ['(', ')', ':', ',', '.', '-', '+', '/', '*'].freeze
 
     attr_reader :source, :tokens
 
@@ -34,7 +33,7 @@ module Stoffle
       c = consume
 
       return if WHITESPACE.include?(c)
-      return ignore_comment_line if c == '#'
+      return ignore_comment_line if c == COMMENT
       if c == "\n"
         self.line += 1
         tokens << token_from_one_char_lex(c) if tokens.last&.type != :"\n"
@@ -45,14 +44,8 @@ module Stoffle
       token =
         if ONE_CHAR_LEX.include?(c)
           token_from_one_char_lex(c)
-        elsif ONE_OR_TWO_CHAR_LEX.include?(c)
-          token_from_one_or_two_char_lex(c)
-        elsif c == '"'
-          string
         elsif digit?(c)
           number
-        elsif alpha_numeric?(c)
-          identifier
         end
 
       if token
@@ -85,35 +78,10 @@ module Stoffle
       Token.new(lexeme.to_sym, lexeme, nil, current_location)
     end
 
-    def token_from_one_or_two_char_lex(lexeme)
-      n = lookahead
-      if n == '='
-        consume
-        Token.new((lexeme + n).to_sym, lexeme + n, nil, current_location)
-      else
-        token_from_one_char_lex(lexeme)
-      end
-    end
-
     def ignore_comment_line
       while lookahead != "\n" && source_uncompleted?
         consume
       end
-    end
-
-    def string
-      while lookahead != '"' && source_uncompleted?
-        self.line += 1 if lookahead == "\n"
-        consume
-      end
-      raise 'Unterminated string error.' if source_completed?
-
-      consume # consuming the closing '"'.
-      lexeme = source[(lexeme_start_p)..(next_p - 1)]
-      # the actual value of the string is the content between the double quotes.
-      literal = source[(lexeme_start_p + 1)..(next_p - 2)]
-
-      Token.new(:string, lexeme, literal, current_location)
     end
 
     def number
@@ -127,32 +95,6 @@ module Stoffle
 
       lexeme = source[lexeme_start_p..(next_p - 1)]
       Token.new(:number, lexeme, lexeme.to_f, current_location)
-    end
-
-    def identifier
-      while alpha_numeric?(lookahead)
-        consume
-      end
-
-      identifier = source[lexeme_start_p..(next_p - 1)]
-      type =
-        if KEYWORD.include?(identifier)
-          identifier.to_sym
-        else
-          :identifier
-        end
-
-      Token.new(type, identifier, nil, current_location)
-    end
-
-    def alpha_numeric?(c)
-      alpha?(c) || digit?(c)
-    end
-
-    def alpha?(c)
-      c >= 'a' && c <= 'z' ||
-      c >= 'A' && c <= 'Z' ||
-      c == '_'
     end
 
     def digit?(c)

@@ -1,5 +1,0 @@
-if true and nil
-  println("IF block evaluated.")
-else
-  println("ELSE block evaluated.")
-end

@@ -1,9 +1,0 @@
-fn is_zero: num
-  if num == 0
-    return true
-  end
-
-  false
-end
-
-result = is_zero(0)

@@ -1,4 +1,0 @@
-short_circuited = false
-if 1 or println("Did not short-circuit.")
-  short_circuited = true
-end

@@ -2,21 +2,11 @@ module Stoffle
   class Parser
     attr_accessor :tokens, :ast, :errors
 
-    UNARY_OPERATORS = [:'!', :'-'].freeze
-    BINARY_OPERATORS = [:'+', :'-', :'*', :'/', :'==', :'!=', :'>', :'<', :'>=', :'<='].freeze
-    LOGICAL_OPERATORS = [:or, :and].freeze
+    BINARY_OPERATORS = [:'+', :'-', :'*', :'/'].freeze
 
     LOWEST_PRECEDENCE = 0
     PREFIX_PRECEDENCE = 7
     OPERATOR_PRECEDENCE = {
-      or:   1,
-      and:  2,
-      '==': 3,
-      '!=': 3,
-      '>':  4,
-      '<':  4,
-      '>=': 4,
-      '<=': 4,
       '+':  5,
       '-':  5,
       '*':  6,
@@ -115,176 +105,23 @@ module Stoffle
     end
 
     def determine_parsing_function
-      if [:return, :identifier, :number, :string, :true, :false, :nil, :fn, :fun,
-          :if, :while].include?(current.type)
+      if [:number].include?(current.type)
         "parse_#{current.type}".to_sym
       elsif current.type == :'('
         :parse_grouped_expr
-      elsif [:"\n", :eof].include?(current.type)
+      elsif [:"\n", :eof].include?(current.type) # remove?
         :parse_terminator
-      elsif UNARY_OPERATORS.include?(current.type)
-        :parse_unary_operator
       end
     end
 
     def determine_infix_function(token = current)
-      if (BINARY_OPERATORS + LOGICAL_OPERATORS).include?(token.type)
+      if (BINARY_OPERATORS).include?(token.type)
         :parse_binary_operator
-      elsif token.type == :'('
-        :parse_function_call
       end
-    end
-
-    def parse_identifier
-      if lookahead.type == :'='
-        parse_var_binding
-      else
-        ident = AST::Identifier.new(current.lexeme)
-        check_syntax_compliance(ident)
-        ident
-      end
-    end
-
-    def parse_string
-      AST::String.new(current.literal)
     end
 
     def parse_number
       AST::Number.new(current.literal)
-    end
-
-    def parse_boolean
-      AST::Boolean.new(current.lexeme == 'true')
-    end
-
-    def parse_nil
-      AST::Nil.new
-    end
-
-    def parse_fun_definition
-      return unless consume_if_nxt_is(build_token(:identifier))
-      fn = AST::FunctionDefinition.new(AST::Identifier.new(current.lexeme))
-
-      if nxt.type != :'('
-        unexpected_token_error
-        return
-      end
-
-      fn.params = parse_function_params
-
-      if nxt.type != :')'
-        unexpected_token_error
-        return
-      end
-
-      consume
-
-      if nxt.type != :'{'
-        unexpected_token_error
-        return
-      end
-
-      consume
-      fn.body = parse_block
-      fn
-    end
-
-    def parse_function_definition
-      return unless consume_if_nxt_is(build_token(:identifier))
-      fn = AST::FunctionDefinition.new(AST::Identifier.new(current.lexeme))
-
-      if nxt.type != :"\n" && nxt.type != :':'
-        unexpected_token_error
-        return
-      end
-
-      fn.params = parse_function_params if nxt.type == :':'
-
-      return unless consume_if_nxt_is(build_token(:"\n", "\n"))
-      fn.body = parse_block
-
-      fn
-    end
-
-    def parse_function_params
-      consume
-      return unless consume_if_nxt_is(build_token(:identifier))
-
-      identifiers = []
-      identifiers << AST::Identifier.new(current.lexeme)
-
-      while nxt.type == :','
-        consume
-        return unless consume_if_nxt_is(build_token(:identifier))
-        identifiers << AST::Identifier.new(current.lexeme)
-      end
-
-      identifiers
-    end
-
-    def parse_function_call(identifier)
-      AST::FunctionCall.new(identifier, parse_function_call_args)
-    end
-
-    def parse_function_call_args
-      args = []
-
-      # Function call without arguments.
-      if nxt.type == :')'
-        consume
-        return args
-      end
-
-      consume
-      args << parse_expr_recursively
-
-      while nxt.type == :','
-        consume(2)
-        args << parse_expr_recursively
-      end
-
-      return unless consume_if_nxt_is(build_token(:')', ')'))
-      args
-    end
-
-    def parse_conditional
-      conditional = AST::Conditional.new
-      consume
-      conditional.condition = parse_expr_recursively
-      return unless consume_if_nxt_is(build_token(:"\n", "\n"))
-
-      conditional.when_true = parse_block
-
-      # TODO: Probably is best to use nxt and check directly; ELSE is optional and should not result in errors being added to the parsing. Besides that: think of some sanity checks (e.g., no parser errors) that maybe should be done in EVERY parser test.
-      if consume_if_nxt_is(build_token(:else, 'else'))
-        return unless consume_if_nxt_is(build_token(:"\n", "\n"))
-        conditional.when_false = parse_block
-      end
-
-      conditional
-    end
-
-    def parse_repetition
-      repetition = AST::Repetition.new
-      consume
-      repetition.condition = parse_expr_recursively
-      return unless consume_if_nxt_is(build_token(:"\n", "\n"))
-
-      repetition.block = parse_block
-      repetition
-    end
-
-    def parse_block
-      consume
-      block = AST::Block.new
-      while current.type != :"}" && current.type != :end && current.type != :eof && nxt.type != :else
-        expr = parse_expr_recursively
-        block << expr unless expr.nil?
-        consume
-      end
-      unexpected_token_error(build_token(:eof)) if current.type == :eof
-
-      block
     end
 
     def parse_grouped_expr
@@ -299,26 +136,6 @@ module Stoffle
     # TODO Temporary impl; reflect more deeply about the appropriate way of parsing a terminator.
     def parse_terminator
       nil
-    end
-
-    def parse_var_binding
-      identifier = AST::Identifier.new(current.lexeme)
-      consume(2)
-
-      AST::VarBinding.new(identifier, parse_expr_recursively)
-    end
-
-    def parse_return
-      consume
-      AST::Return.new(parse_expr_recursively)
-    end
-
-    def parse_unary_operator
-      op = AST::UnaryOperator.new(current.type)
-      consume
-      op.operand = parse_expr_recursively(PREFIX_PRECEDENCE)
-
-      op
     end
 
     def parse_binary_operator(left)
@@ -352,12 +169,5 @@ module Stoffle
 
       expr
     end
-
-    alias_method :parse_true, :parse_boolean
-    alias_method :parse_false, :parse_boolean
-    alias_method :parse_fn, :parse_function_definition
-    alias_method :parse_fun, :parse_fun_definition
-    alias_method :parse_if, :parse_conditional
-    alias_method :parse_while, :parse_repetition
   end
 end

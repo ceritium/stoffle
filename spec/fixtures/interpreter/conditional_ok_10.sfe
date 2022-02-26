@@ -1,5 +1,0 @@
-if false or 2 * 2 == "hey"
-  println("IF block evaluated.")
-else
-  println("ELSE block evaluated.")
-end

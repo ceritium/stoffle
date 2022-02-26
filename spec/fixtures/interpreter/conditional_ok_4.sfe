@@ -1,3 +1,0 @@
-if "" # In Stoffle - like in Ruby - everything except nil and false is considered truthy
-  println("IF block evaluated.")
-end
