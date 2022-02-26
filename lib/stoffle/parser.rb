@@ -115,7 +115,7 @@ module Stoffle
     end
 
     def determine_parsing_function
-      if [:return, :identifier, :number, :string, :true, :false, :nil, :fn,
+      if [:return, :identifier, :number, :string, :true, :false, :nil, :fn, :fun,
           :if, :while].include?(current.type)
         "parse_#{current.type}".to_sym
       elsif current.type == :'('
@@ -159,6 +159,34 @@ module Stoffle
 
     def parse_nil
       AST::Nil.new
+    end
+
+    def parse_fun_definition
+      return unless consume_if_nxt_is(build_token(:identifier))
+      fn = AST::FunctionDefinition.new(AST::Identifier.new(current.lexeme))
+
+      if nxt.type != :'('
+        unexpected_token_error
+        return
+      end
+
+      fn.params = parse_function_params
+
+      if nxt.type != :')'
+        unexpected_token_error
+        return
+      end
+
+      consume
+
+      if nxt.type != :'{'
+        unexpected_token_error
+        return
+      end
+
+      consume
+      fn.body = parse_block
+      fn
     end
 
     def parse_function_definition
@@ -249,7 +277,7 @@ module Stoffle
     def parse_block
       consume
       block = AST::Block.new
-      while current.type != :end && current.type != :eof && nxt.type != :else
+      while current.type != :"}" && current.type != :end && current.type != :eof && nxt.type != :else
         expr = parse_expr_recursively
         block << expr unless expr.nil?
         consume
@@ -328,6 +356,7 @@ module Stoffle
     alias_method :parse_true, :parse_boolean
     alias_method :parse_false, :parse_boolean
     alias_method :parse_fn, :parse_function_definition
+    alias_method :parse_fun, :parse_fun_definition
     alias_method :parse_if, :parse_conditional
     alias_method :parse_while, :parse_repetition
   end

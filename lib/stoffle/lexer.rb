@@ -1,9 +1,9 @@
 module Stoffle
   class Lexer
     WHITESPACE = [' ', "\r", "\t"].freeze
-    ONE_CHAR_LEX = ['(', ')', ':', ',', '.', '-', '+', '/', '*'].freeze
+    ONE_CHAR_LEX = ['{', '}', '(', ')', ':', ',', '.', '-', '+', '/', '*'].freeze
     ONE_OR_TWO_CHAR_LEX = ['!', '=', '>', '<'].freeze
-    KEYWORD = ['and', 'else', 'end', 'false', 'fn', 'if', 'nil', 'or', 'return', 'true', 'while'].freeze
+    KEYWORD = ['fun', 'and', 'else', 'end', 'false', 'fn', 'if', 'nil', 'or', 'return', 'true', 'while'].freeze
 
     attr_reader :source, :tokens
 

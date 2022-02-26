@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'pry-nav'
 
 RSpec.describe Stoffle::Parser do
   sfe_prog = Stoffle::AST::Program
@@ -454,6 +455,24 @@ RSpec.describe Stoffle::Parser do
       end
     end
 
+    context 'fun definition' do
+      it 'works' do
+        code = "fun double(num) { num * 2 }"
+
+        expected_prog = sfe_prog.new
+        fn_name = sfe_ident.new('double')
+        param = sfe_ident.new('num')
+        block = sfe_block.new
+        block << sfe_binary_op.new(:'*', param, sfe_num.new(2.0))
+        fn_def = sfe_fn_def.new(fn_name, [param], block)
+        expected_prog.expressions.append(fn_def)
+
+        parser = Stoffle::Parser.new(tokens_from_code(code))
+        parser.parse
+        expect(parser.ast).to eq(expected_prog)
+      end
+    end
+
     context 'function definition' do
       it 'does generate the expected AST for a function without parameters' do
         expected_prog = sfe_prog.new
@@ -601,6 +620,10 @@ RSpec.describe Stoffle::Parser do
         expect(parser.ast).to eq(expected_prog)
       end
     end
+  end
+
+  def tokens_from_code(code)
+    Stoffle::Lexer.new(code).start_tokenization
   end
 
   def tokens_from_source(filename)

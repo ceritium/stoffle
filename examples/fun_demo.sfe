@@ -1,0 +1,6 @@
+var_double = fun double(num) {
+  num * 2
+}
+
+println(var_double(1))
+println(double(2))

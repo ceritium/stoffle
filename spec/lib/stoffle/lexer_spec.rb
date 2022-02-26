@@ -1,6 +1,27 @@
 require 'spec_helper'
 
 RSpec.describe Stoffle::Lexer do
+  describe 'fun' do
+    it 'works' do
+      source = <<-STOFFLE
+        fun function_name(var1, var2) {
+          var1 + var2
+        }
+      STOFFLE
+      lexer = Stoffle::Lexer.new(source)
+      expected_token_types = [
+        :fun, :identifier, :'(', :identifier, :',', :identifier, :")", :"{", :"\n",
+        :identifier, :'+', :identifier, :"\n",
+        :"}", :"\n",
+        :eof
+      ]
+
+      lexer.start_tokenization
+
+      expect(lexer.tokens.map(&:type)).to eq(expected_token_types)
+    end
+  end
+
   describe '#start_tokenization' do
     context 'only one character lexemes' do
       it 'does produce the expected tokens' do
