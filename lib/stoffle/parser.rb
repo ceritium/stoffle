@@ -105,7 +105,7 @@ module Stoffle
     end
 
     def determine_parsing_function
-      if [:number].include?(current.type)
+      if [:number, :identifier].include?(current.type)
         "parse_#{current.type}".to_sym
       elsif current.type == :'('
         :parse_grouped_expr
@@ -119,6 +119,29 @@ module Stoffle
         :parse_binary_operator
       end
     end
+
+    def parse_var_binding
+      identifier = AST::Identifier.new(current.lexeme)
+      consume(2)
+      AST::VarBinding.new(identifier, parse_expr_recursively)
+    end
+
+    def parse_identifier
+      if lookahead.type == :"="
+        parse_var_binding
+      else
+        ident = AST::Identifier.new(current.lexeme)
+        check_syntax_compliance(ident)
+        ident
+      end
+    end
+
+    def check_syntax_compliance(ast_node)
+      return if ast_node.expects?(nxt.type)
+
+      unexpected_token_error
+    end
+
 
     def parse_number
       AST::Number.new(current.literal)
@@ -154,6 +177,7 @@ module Stoffle
         unrecognized_token_error
         return
       end
+
       expr = send(parsing_function)
       return if expr.nil? # When expr is nil, it means we have reached a \n or a eof.
 

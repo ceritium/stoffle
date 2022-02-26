@@ -2,7 +2,7 @@ module Stoffle
   class Lexer
     COMMENT = "#"
     WHITESPACE = [' ', "\r", "\t"].freeze
-    ONE_CHAR_LEX = ['(', ')', ':', ',', '.', '-', '+', '/', '*'].freeze
+    ONE_CHAR_LEX = ['=', '(', ')', ':', ',', '.', '-', '+', '/', '*'].freeze
 
     attr_reader :source, :tokens
 
@@ -46,6 +46,8 @@ module Stoffle
           token_from_one_char_lex(c)
         elsif digit?(c)
           number
+        elsif identifier?(c)
+          identifier
         end
 
       if token
@@ -53,6 +55,16 @@ module Stoffle
       else
         raise("Unknown character #{c}")
       end
+    end
+
+    def identifier?(c)
+      digit?(c) || alpha?(c)
+    end
+
+    def alpha?(c)
+      c >= 'a' && c <= 'z' ||
+      c >= 'A' && c <= 'Z' ||
+      c == '_'
     end
 
     def consume
@@ -63,6 +75,12 @@ module Stoffle
 
     def consume_digits
       while digit?(lookahead)
+        consume
+      end
+    end
+
+    def consume_identifier
+      while identifier?(lookahead)
         consume
       end
     end
@@ -82,6 +100,13 @@ module Stoffle
       while lookahead != "\n" && source_uncompleted?
         consume
       end
+    end
+
+    def identifier
+      consume_identifier
+
+      lexeme = source[lexeme_start_p..(next_p - 1)]
+      Token.new(:identifier, lexeme, nil, current_location)
     end
 
     def number

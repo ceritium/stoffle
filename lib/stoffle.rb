@@ -7,29 +7,17 @@ require_relative 'stoffle/location'
 require_relative 'stoffle/token'
 require_relative 'stoffle/lexer'
 require_relative 'stoffle/parser'
-require_relative 'stoffle/error/runtime/undefined_function'
-require_relative 'stoffle/error/runtime/undefined_variable'
-require_relative 'stoffle/error/runtime/unexpected_return'
-require_relative 'stoffle/error/runtime/wrong_num_arg'
 require_relative 'stoffle/error/syntax/unexpected_token'
 require_relative 'stoffle/error/syntax/unrecognized_token'
+require_relative 'stoffle/error/runtime/undefined_variable'
 require_relative 'stoffle/ast/shared/expression_collection'
 require_relative 'stoffle/ast/expression'
 require_relative 'stoffle/ast/program'
-require_relative 'stoffle/ast/block'
-require_relative 'stoffle/ast/var_binding'
-require_relative 'stoffle/ast/identifier'
-require_relative 'stoffle/ast/string'
 require_relative 'stoffle/ast/number'
-require_relative 'stoffle/ast/boolean'
-require_relative 'stoffle/ast/nil'
-require_relative 'stoffle/ast/return'
+require_relative 'stoffle/ast/identifier'
+require_relative 'stoffle/ast/var_binding'
 require_relative 'stoffle/ast/unary_operator'
 require_relative 'stoffle/ast/binary_operator'
-require_relative 'stoffle/ast/conditional'
-require_relative 'stoffle/ast/repetition'
-require_relative 'stoffle/ast/function_definition'
-require_relative 'stoffle/ast/function_call'
 require_relative 'stoffle/runtime/stack_frame'
 require_relative 'stoffle/interpreter'
 
@@ -54,6 +42,9 @@ module Stoffle
   def self.run(source, interpreter = Stoffle::Interpreter.new)
     lexer = Stoffle::Lexer.new(source)
     parser = Stoffle::Parser.new(lexer.start_tokenization)
-    interpreter.interpret(parser.parse)
+    parser.parse
+    puts parser.errors
+
+    interpreter.interpret(parser.ast)
   end
 end

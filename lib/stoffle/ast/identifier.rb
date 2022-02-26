@@ -15,7 +15,8 @@ class Stoffle::AST::Identifier < Stoffle::AST::Expression
     :>=,
     :<=,
     :and,
-    :or
+    :or,
+    :eof
   ].freeze
 
   def initialize(name)

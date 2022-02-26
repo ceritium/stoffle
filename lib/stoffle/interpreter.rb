@@ -63,5 +63,17 @@ module Stoffle
     def interpret_number(number)
       number.value
     end
+
+    def interpret_var_binding(var_binding)
+      env[var_binding.left.name] = interpret_node(var_binding.right)
+    end
+
+    def interpret_identifier(identifier)
+      if env.has_key?(identifier.name)
+        env[identifier.name]
+      else
+        raise Stoffle::Error::Runtime::UndefinedVariable.new(identifier.name)
+      end
+    end
   end
 end
