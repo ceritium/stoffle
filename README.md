@@ -20,3 +20,13 @@ If you are interested in this project, I highly recommend you read the blog post
 ## Where does the name Stoffle come from?
 
 Stoffle is the name of a mischievous honey badger from South Africa. Watch a [short BBC clip](https://www.youtube.com/watch?v=c36UNSoJenI) about Stoffle on YouTube.
+
+
+## Valid syntax
+
+```
+a = 2
+a * 2
+var a = 2
+var a
+```

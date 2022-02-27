@@ -4,6 +4,9 @@ RSpec.describe Stoffle do
   end
 
   it "does some calculations" do
+    expect(Stoffle.run("var a")).to eq(nil)
+    # expect(Stoffle.run("var a = nil")).to eq(nil)
+    expect(Stoffle.run("var a = 22")).to eq(22)
     expect(Stoffle.run("a = 22")).to eq(22)
     expect(Stoffle.run("a = 22
                        a * 2
@@ -23,6 +26,25 @@ RSpec.describe Stoffle do
   end
 
   describe "Lexer" do
+    it "parses nil" do
+      # lexer = Stoffle::Lexer.new("nil")
+      # lexer.start_tokenization
+      # expect(lexer.tokens).to eq([
+      #   Stoffle::Token.new(:nil, "nil", nil, Location.new(0, 0, 3)),
+      #   Stoffle::Token.new(:eof, "", nil, Location.new(0, 3, 1))
+      # ])
+    end
+
+    it "parses var" do
+      lexer = Stoffle::Lexer.new("var a")
+      lexer.start_tokenization
+      expect(lexer.tokens).to eq([
+        Stoffle::Token.new(:var, "var", nil, Location.new(0, 0, 3)),
+        Stoffle::Token.new(:identifier, "a", nil, Location.new(0, 4, 1)),
+        Stoffle::Token.new(:eof, "", nil, Location.new(0, 5, 1))
+      ])
+    end
+
     it "parse assigment vars" do
       lexer = Stoffle::Lexer.new("a = 22")
       lexer.start_tokenization
@@ -48,9 +70,16 @@ RSpec.describe Stoffle do
   end
 
   describe "Parser" do
+    it "parses var without value" do
+      lexer = Stoffle::Lexer.new("var a
+                                 2 + 2")
+      parser = Stoffle::Parser.new(lexer.start_tokenization)
+      parser.parse
+      expect(parser.errors).to be_empty
+
+    end
     it "parse assignment and use of vars without errors" do
-      lexer = Stoffle::Lexer.new("a = 22
-                                 a * 2")
+      lexer = Stoffle::Lexer.new("a = 22")
       parser = Stoffle::Parser.new(lexer.start_tokenization)
       parser.parse
       expect(parser.errors).to be_empty

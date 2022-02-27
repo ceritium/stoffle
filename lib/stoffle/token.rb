@@ -4,6 +4,9 @@ module Stoffle
   class Token
     extend Forwardable
 
+    RESERVED_KEYWORD_TYPE = ['var'].freeze
+
+
     attr_reader :type, :lexeme, :literal, :location
     def_delegators :@location, :line, :col, :length
 

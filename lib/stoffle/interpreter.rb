@@ -64,6 +64,10 @@ module Stoffle
       number.value
     end
 
+    def interpret_nil(_node)
+      nil
+    end
+
     def interpret_var_binding(var_binding)
       env[var_binding.left.name] = interpret_node(var_binding.right)
     end

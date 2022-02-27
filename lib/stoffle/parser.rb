@@ -105,7 +105,7 @@ module Stoffle
     end
 
     def determine_parsing_function
-      if [:number, :identifier].include?(current.type)
+      if [:number, :identifier, :var].include?(current.type)
         "parse_#{current.type}".to_sym
       elsif current.type == :'('
         :parse_grouped_expr
@@ -117,6 +117,17 @@ module Stoffle
     def determine_infix_function(token = current)
       if (BINARY_OPERATORS).include?(token.type)
         :parse_binary_operator
+      end
+    end
+
+    def parse_var
+      if nxt.type == :identifier
+        consume
+        if nxt.type == :"\n" || nxt.type == :eof
+          identifier = AST::Identifier.new(current.lexeme)
+          AST::VarBinding.new(identifier, AST::Nil.new())
+        else
+        end
       end
     end
 
