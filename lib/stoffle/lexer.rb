@@ -3,7 +3,7 @@ module Stoffle
     COMMENT = "#"
     WHITESPACE = [' ', "\r", "\t"].freeze
     ONE_CHAR_LEX = ['=', '(', ')', ':', ',', '.', '-', '+', '/', '*'].freeze
-    KEYWORD = ['nil'].freeze
+    KEYWORD = ['var', 'nil'].freeze
 
     attr_reader :source, :tokens
 
@@ -106,10 +106,15 @@ module Stoffle
     def identifier
       consume_identifier
 
-      lexeme = source[lexeme_start_p..(next_p - 1)]
-      type_sym = Token::RESERVED_KEYWORD_TYPE.include?(lexeme) ? lexeme.to_sym : :identifier
+      identifier = source[lexeme_start_p..(next_p - 1)]
+      type =
+        if KEYWORD.include?(identifier)
+          identifier.to_sym
+        else
+          :identifier
+        end
 
-      Token.new(type_sym, lexeme, nil, current_location)
+      Token.new(type, identifier, nil, current_location)
     end
 
     def number

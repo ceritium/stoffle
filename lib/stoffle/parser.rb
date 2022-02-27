@@ -105,7 +105,7 @@ module Stoffle
     end
 
     def determine_parsing_function
-      if [:number, :identifier, :var].include?(current.type)
+      if [:number, :identifier, :var, :nil].include?(current.type)
         "parse_#{current.type}".to_sym
       elsif current.type == :'('
         :parse_grouped_expr
@@ -145,6 +145,10 @@ module Stoffle
         check_syntax_compliance(ident)
         ident
       end
+    end
+
+    def parse_nil
+      AST::Nil.new()
     end
 
     def check_syntax_compliance(ast_node)
