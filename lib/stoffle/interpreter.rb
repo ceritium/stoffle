@@ -2,9 +2,9 @@ module Stoffle
   class Interpreter
     attr_reader :program, :output, :env, :call_stack, :unwind_call_stack
 
-    def initialize
+    def initialize(env: {})
       @output = []
-      @env = {}
+      @env = env
       @call_stack = []
       @unwind_call_stack = -1
     end

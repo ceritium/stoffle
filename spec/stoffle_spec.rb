@@ -3,6 +3,11 @@ RSpec.describe Stoffle do
     expect(Stoffle::VERSION).not_to be nil
   end
 
+  it "accepts external env" do
+    expect(Stoffle.run("a", env: { 'a' => 22 })).to eq(22)
+    expect(Stoffle.run("a * 2", env: { 'a' => 22 })).to eq(44)
+  end
+
   it "does some calculations" do
     expect(Stoffle.run("var a")).to eq(nil)
     expect(Stoffle.run("var a = nil")).to eq(nil)

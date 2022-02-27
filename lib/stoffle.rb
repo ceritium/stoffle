@@ -28,7 +28,7 @@ module Stoffle
     interpreter = Stoffle::Interpreter.new
     while buf = Readline.readline("> ", true)
       begin
-        puts "=> #{run(buf, interpreter)}"
+        puts "=> #{run(buf, interpreter: interpreter)}"
       rescue => e
         puts e.message
       end
@@ -40,9 +40,10 @@ module Stoffle
     run(file_content)
   end
 
-  def self.run(source, interpreter = Stoffle::Interpreter.new)
+  def self.run(source, env: {}, interpreter: nil)
     lexer = Stoffle::Lexer.new(source)
     parser = Stoffle::Parser.new(lexer.start_tokenization)
+    interpreter ||= Stoffle::Interpreter.new(env: env)
     parser.parse
     puts parser.errors
 
