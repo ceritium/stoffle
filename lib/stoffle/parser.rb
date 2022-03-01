@@ -2,7 +2,12 @@ module Stoffle
   class Parser
     attr_accessor :tokens, :ast, :errors
 
-    BINARY_OPERATORS = [:'+', :'-', :'*', :'/'].freeze
+    BINARY_OPERATORS = [
+      Type::PLUS,
+      Type::MINUS,
+      Type::STAR,
+      Type::SLASH,
+    ].freeze
 
     LOWEST_PRECEDENCE = 0
     PREFIX_PRECEDENCE = 7
@@ -45,13 +50,34 @@ module Stoffle
     end
 
     def nxt_not_terminator?
-      nxt.type != :"\n" && nxt.type != :eof
+      !end_of_line?(nxt)
     end
 
-    def consume(offset = 1)
-      t = lookahead(offset)
-      self.next_p += offset
-      t
+    def end_of_line?(token)
+      Type[[:"\n", :eof]].include?(token.type)
+    end
+
+    def advance
+      self.next_p += 1 unless at_end?
+      previous
+    end
+
+    def consume(type = nil)
+      if type.nil? || check(*type)
+        return advance
+      end
+
+      unexpected_token_error(type) if type
+    end
+
+    def check(*types)
+      return false if at_end?
+
+      Type[types].include?(nxt.type)
+    end
+
+    def at_end?
+      current && current.type == Type[:eof]
     end
 
     def consume_if_nxt_is(expected)
@@ -105,11 +131,11 @@ module Stoffle
     end
 
     def determine_parsing_function
-      if [:number, :identifier, :var, :nil].include?(current.type)
+      if Type[[:number, :identifier, :var, :nil]].include?(current.type)
         "parse_#{current.type}".to_sym
-      elsif current.type == :'('
+      elsif current.type == Type[:'(']
         :parse_grouped_expr
-      elsif [:"\n", :eof].include?(current.type) # remove?
+      elsif end_of_line?(current)
         :parse_terminator
       end
     end
@@ -121,19 +147,17 @@ module Stoffle
     end
 
     def parse_var
-      if nxt.type == :identifier
-        consume
-        if nxt.type == :"\n" || nxt.type == :eof
-          identifier = AST::Identifier.new(current.lexeme)
-          AST::VarBinding.new(identifier, AST::Nil.new())
-        else
-        end
+      consume(:identifier)
+      if end_of_line?(nxt)
+        identifier = AST::Identifier.new(current.lexeme)
+        AST::VarBinding.new(identifier, AST::Nil.new())
       end
     end
 
     def parse_var_binding
       identifier = AST::Identifier.new(current.lexeme)
-      consume(2)
+      consume(:"=")
+      consume([:number, :nil, :string, :identifier])
       AST::VarBinding.new(identifier, parse_expr_recursively)
     end
 
