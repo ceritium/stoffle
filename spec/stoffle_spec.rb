@@ -74,6 +74,27 @@ RSpec.describe Stoffle do
       ])
     end
 
+    it "parse with break line" do
+      lexer = Stoffle::Lexer.new(<<~CODE
+                                    a = 22
+                                    b = 44
+                                  CODE
+                                )
+      lexer.start_tokenization
+      expect(lexer.tokens[0..8]).to eq([
+        Stoffle::Token.new(:identifier, "a", nil, Location.new(0, 0, 1)),
+        Stoffle::Token.new(:"=", "=", nil, Location.new(0, 2, 1)),
+        Stoffle::Token.new(:number, "22", 22.0, Location.new(0, 4, 2)),
+        Stoffle::Token.new(:"\n", "\n", nil, Location.new(0, 6, 1)),
+        Stoffle::Token.new(:identifier, "b", nil, Location.new(1, 7, 1)),
+        Stoffle::Token.new(:"=", "=", nil, Location.new(1, 9, 1)),
+        Stoffle::Token.new(:number, "44", 44.0, Location.new(1, 11, 2)),
+        Stoffle::Token.new(:"\n", "\n", nil, Location.new(1, 13, 1)),
+        Stoffle::Token.new(:eof, "", nil, Location.new(2, 14, 1))
+      ])
+    end
+
+
     it "parse assigment" do
       lexer = Stoffle::Lexer.new("a = 22")
       lexer.start_tokenization

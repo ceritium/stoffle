@@ -1,9 +1,9 @@
 module Stoffle
   class Lexer
-    COMMENT = "#"
+    BREAK_LINE = "\n"
+    COMMENT = '#'
     WHITESPACE = [' ', "\r", "\t"].freeze
-    ONE_CHAR_LEX = ['=', '(', ')', ':', ',', '.', '-', '+', '/', '*'].freeze
-    KEYWORD = ['var', 'nil'].freeze
+    KEYWORD = %w[var nil].freeze
 
     attr_reader :source, :tokens
 
@@ -16,9 +16,7 @@ module Stoffle
     end
 
     def start_tokenization
-      while source_uncompleted?
-        tokenize
-      end
+      tokenize while source_uncompleted?
 
       tokens << Token.new(:eof, '', nil, after_source_end_location)
     end
@@ -35,21 +33,35 @@ module Stoffle
 
       return if WHITESPACE.include?(c)
       return ignore_comment_line if c == COMMENT
-      if c == "\n"
-        self.line += 1
-        tokens << token_from_one_char_lex(c) if tokens.last&.type != :"\n"
 
+      if c == BREAK_LINE
+
+        if tokens.last&.type != BREAK_LINE
+          # Only adds one break line
+          tokens << token_from_one_char_lex(c)
+        end
+        self.line += 1
         return
       end
 
-      token =
-        if ONE_CHAR_LEX.include?(c)
-          token_from_one_char_lex(c)
-        elsif digit?(c)
-          number
-        elsif identifier?(c)
-          identifier
-        end
+      token = case c
+              when '=' then token_from_one_char_lex(c)
+              when '(' then token_from_one_char_lex(c)
+              when ')' then token_from_one_char_lex(c)
+              when ':' then token_from_one_char_lex(c)
+              when ',' then token_from_one_char_lex(c)
+              when '.' then token_from_one_char_lex(c)
+              when '-' then token_from_one_char_lex(c)
+              when '+' then token_from_one_char_lex(c)
+              when '/' then token_from_one_char_lex(c)
+              when '*' then token_from_one_char_lex(c)
+              else
+                if digit?(c)
+                  number
+                elsif identifier?(c)
+                  identifier
+                end
+              end
 
       if token
         tokens << token
@@ -58,14 +70,18 @@ module Stoffle
       end
     end
 
+    def token_from_one_char_lex(lexeme)
+      Token.new(lexeme.to_sym, lexeme, nil, current_location)
+    end
+
     def identifier?(c)
       digit?(c) || alpha?(c)
     end
 
     def alpha?(c)
       c >= 'a' && c <= 'z' ||
-      c >= 'A' && c <= 'Z' ||
-      c == '_'
+        c >= 'A' && c <= 'Z' ||
+        c == '_'
     end
 
     def consume
@@ -75,15 +91,11 @@ module Stoffle
     end
 
     def consume_digits
-      while digit?(lookahead)
-        consume
-      end
+      consume while digit?(lookahead)
     end
 
     def consume_identifier
-      while identifier?(lookahead)
-        consume
-      end
+      consume while identifier?(lookahead)
     end
 
     def lookahead(offset = 1)
@@ -93,14 +105,8 @@ module Stoffle
       source[lookahead_p]
     end
 
-    def token_from_one_char_lex(lexeme)
-      Token.new(lexeme.to_sym, lexeme, nil, current_location)
-    end
-
     def ignore_comment_line
-      while lookahead != "\n" && source_uncompleted?
-        consume
-      end
+      consume while lookahead != BREAK_LINE && source_uncompleted?
     end
 
     def identifier
