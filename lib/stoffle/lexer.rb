@@ -18,7 +18,7 @@ module Stoffle
     def start_tokenization
       tokenize while source_uncompleted?
 
-      tokens << Token.new(:eof, '', nil, after_source_end_location)
+      tokens << Token.new(Token::EOF, '', nil, after_source_end_location)
     end
 
     private

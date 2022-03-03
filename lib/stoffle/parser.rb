@@ -2,21 +2,25 @@ module Stoffle
   class Parser
     attr_accessor :tokens, :ast, :errors
 
+    EXPRESSION_TOKENS = [
+      Token::NUMBER, Token::IDENTIFIER, Token::VAR, Token::NULL
+    ].freeze
+
     BINARY_OPERATORS = [
-      Type::PLUS,
-      Type::MINUS,
-      Type::STAR,
-      Type::SLASH,
+      Token::PLUS,
+      Token::MINUS,
+      Token::STAR,
+      Token::SLASH,
     ].freeze
 
     LOWEST_PRECEDENCE = 0
     PREFIX_PRECEDENCE = 7
     OPERATOR_PRECEDENCE = {
-      '+':  5,
-      '-':  5,
-      '*':  6,
-      '/':  6,
-      '(':  8
+      Token::PLUS => 5,
+      Token::MINUS => 5,
+      Token::STAR => 6,
+      Token::SLASH => 6,
+      Token::LPAREN => 8
     }.freeze
 
     def initialize(tokens)
@@ -53,10 +57,6 @@ module Stoffle
       !end_of_line?(nxt)
     end
 
-    def end_of_line?(token)
-      Type[[:"\n", :eof]].include?(token.type)
-    end
-
     def advance
       self.next_p += 1 unless at_end?
       previous
@@ -73,11 +73,15 @@ module Stoffle
     def check(*types)
       return false if at_end?
 
-      Type[types].include?(nxt.type)
+      nxt.is?(*types)
+    end
+
+    def end_of_line?(token)
+      token.is?(Token::BREAK_LINE) || at_end?
     end
 
     def at_end?
-      current && current.type == Type[:eof]
+      current&.is?(Token::EOF)
     end
 
     def consume_if_nxt_is(expected)
@@ -131,9 +135,9 @@ module Stoffle
     end
 
     def determine_parsing_function
-      if Type[[:number, :identifier, :var, :nil]].include?(current.type)
+      if current.is?(*EXPRESSION_TOKENS)
         "parse_#{current.type}".to_sym
-      elsif current.type == Type[:'(']
+      elsif current.is?(Token::LPAREN)
         :parse_grouped_expr
       elsif end_of_line?(current)
         :parse_terminator
@@ -141,13 +145,13 @@ module Stoffle
     end
 
     def determine_infix_function(token = current)
-      if (BINARY_OPERATORS).include?(token.type)
+      if token.is?(*BINARY_OPERATORS)
         :parse_binary_operator
       end
     end
 
     def parse_var
-      consume(:identifier)
+      consume(Token::IDENTIFIER)
       if end_of_line?(nxt)
         identifier = AST::Identifier.new(current.lexeme)
         AST::VarBinding.new(identifier, AST::Nil.new())
@@ -156,13 +160,13 @@ module Stoffle
 
     def parse_var_binding
       identifier = AST::Identifier.new(current.lexeme)
-      consume(:"=")
-      consume([:number, :nil, :string, :identifier])
+      consume(Token::EQUAL)
+      consume(EXPRESSION_TOKENS)
       AST::VarBinding.new(identifier, parse_expr_recursively)
     end
 
     def parse_identifier
-      if lookahead.type == :"="
+      if lookahead.is?(Token::EQUAL)
         parse_var_binding
       else
         ident = AST::Identifier.new(current.lexeme)
@@ -172,7 +176,7 @@ module Stoffle
     end
 
     def parse_nil
-      AST::Nil.new()
+      AST::Nil.new
     end
 
     def check_syntax_compliance(ast_node)
@@ -190,6 +194,8 @@ module Stoffle
       consume
 
       expr = parse_expr_recursively
+
+      # me...
       return unless consume_if_nxt_is(build_token(:')', ')'))
 
       expr
