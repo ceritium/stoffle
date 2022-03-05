@@ -3,7 +3,7 @@ module Stoffle
     BREAK_LINE = "\n"
     COMMENT = '#'
     WHITESPACE = [' ', "\r", "\t"].freeze
-    KEYWORD = %w[var nil].freeze
+    KEYWORD = %w[var nil fn].freeze
 
     attr_reader :source, :tokens
 
@@ -46,6 +46,8 @@ module Stoffle
 
       token = case c
               when '=' then token_from_one_char_lex(c)
+              when '{' then token_from_one_char_lex(c)
+              when '}' then token_from_one_char_lex(c)
               when '(' then token_from_one_char_lex(c)
               when ')' then token_from_one_char_lex(c)
               when ':' then token_from_one_char_lex(c)

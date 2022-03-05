@@ -3,7 +3,7 @@ module Stoffle
     attr_accessor :tokens, :ast, :errors
 
     EXPRESSION_TOKENS = [
-      Token::NUMBER, Token::IDENTIFIER, Token::VAR, Token::NULL
+      Token::NUMBER, Token::IDENTIFIER, Token::VAR, Token::NULL, Token::FN
     ].freeze
 
     BINARY_OPERATORS = [
@@ -55,6 +55,7 @@ module Stoffle
 
     def nxt_not_terminator?
       !end_of_line?(nxt)
+      # nxt && !end_of_line?(nxt)
     end
 
     def advance
@@ -73,7 +74,7 @@ module Stoffle
     def check(*types)
       return false if at_end?
 
-      nxt.is?(*types)
+      current.is?(*types)
     end
 
     def end_of_line?(token)
@@ -150,18 +151,35 @@ module Stoffle
       end
     end
 
+    def parse_fn
+      consume(Token::FN)
+      consume(Token::LPAREN)
+      if current.is?(Token::IDENTIFIER)
+        consume(Token::IDENTIFIER)
+        while current.is?(Token::COMMA)
+          consume(Token::COMMA)
+          consume(Token::IDENTIFIER)
+        end
+      end
+      consume(Token::RPAREN)
+      consume(Token::LBRACE)
+      consume(Token::RBRACE)
+      # binding.pry
+      {}
+    end
+
     def parse_var
-      consume(Token::IDENTIFIER)
-      if end_of_line?(nxt)
-        identifier = AST::Identifier.new(current.lexeme)
+      consume(Token::VAR)
+      c = consume(Token::IDENTIFIER)
+      if end_of_line?(current)
+        identifier = AST::Identifier.new(c)
         AST::VarBinding.new(identifier, AST::Nil.new())
       end
     end
 
     def parse_var_binding
-      identifier = AST::Identifier.new(current.lexeme)
+      identifier = AST::Identifier.new(consume(Token::IDENTIFIER).lexeme)
       consume(Token::EQUAL)
-      consume(EXPRESSION_TOKENS)
       AST::VarBinding.new(identifier, parse_expr_recursively)
     end
 
@@ -227,7 +245,7 @@ module Stoffle
       return if expr.nil? # When expr is nil, it means we have reached a \n or a eof.
 
       # Note that here we are checking the NEXT token.
-      while nxt_not_terminator? && precedence < nxt_precedence
+      while !end_of_line?(current) && precedence < nxt_precedence
         infix_parsing_function = determine_infix_function(nxt)
 
         return expr if infix_parsing_function.nil?

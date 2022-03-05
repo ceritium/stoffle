@@ -16,10 +16,14 @@ module Stoffle
       NUMBER = :number,
       IDENTIFIER = :identifier,
       STRING = :string,
+      FN = :fn,
       VAR = :var,
       NULL = :nil,
       LPAREN = :'(',
-      RPAREN = :')'
+      RPAREN = :')',
+      LBRACE = :'{',
+      RBRACE = :'}',
+      COMMA = :','
     ]
 
     extend Forwardable

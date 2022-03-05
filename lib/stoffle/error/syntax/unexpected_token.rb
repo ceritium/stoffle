@@ -9,7 +9,7 @@ module Stoffle
           @next_token = nxt
           @expected_token = expected
           message = "Unexpected token #{next_token.lexeme} after #{current_token.lexeme}"
-          message += "\nExpected: #{expected_token.lexeme}" unless expected_token.nil?
+          message += "\nExpected: #{expected_token}" unless expected_token.nil?
           super(message)
         end
       end
