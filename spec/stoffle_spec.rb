@@ -8,6 +8,10 @@ RSpec.describe Stoffle do
     expect(Stoffle.run('a * 2', env: { 'a' => 22 })).to eq(44)
   end
 
+  it { Stoffle.run('var c = fn(a,b) { a + b }
+                   c'
+                  ) }
+
   it 'does some calculations' do
     expect(Stoffle.run('var a')).to eq(nil)
     expect(Stoffle.run('var a = nil')).to eq(nil)
@@ -138,7 +142,8 @@ RSpec.describe Stoffle do
     end
 
     it 'parses fn' do
-      lexer = Stoffle::Lexer.new('fn(a,b) { }')
+      lexer = Stoffle::Lexer.new('var d = fn(a,b) { c = a + b
+c * 2}')
       parser = Stoffle::Parser.new(lexer.start_tokenization)
       parser.parse
       expect(parser.errors).to be_empty

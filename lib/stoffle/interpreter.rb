@@ -72,6 +72,10 @@ module Stoffle
       env[var_binding.left.name] = interpret_node(var_binding.right)
     end
 
+    def interpret_function_definition(fn)
+      fn
+    end
+
     def interpret_identifier(identifier)
       if env.has_key?(identifier.name)
         env[identifier.name]

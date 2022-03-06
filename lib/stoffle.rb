@@ -17,6 +17,8 @@ require_relative 'stoffle/ast/number'
 require_relative 'stoffle/ast/nil'
 require_relative 'stoffle/ast/identifier'
 require_relative 'stoffle/ast/var_binding'
+require_relative 'stoffle/ast/function_definition'
+require_relative 'stoffle/ast/block'
 require_relative 'stoffle/ast/unary_operator'
 require_relative 'stoffle/ast/binary_operator'
 require_relative 'stoffle/runtime/stack_frame'
@@ -30,6 +32,7 @@ module Stoffle
       begin
         puts "=> #{run(buf, interpreter: interpreter)}"
       rescue => e
+        puts e.backtrace
         puts e.message
       end
     end

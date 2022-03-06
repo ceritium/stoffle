@@ -154,26 +154,44 @@ module Stoffle
     def parse_fn
       consume(Token::FN)
       consume(Token::LPAREN)
+      fn = AST::FunctionDefinition.new
+      params = []
       if current.is?(Token::IDENTIFIER)
-        consume(Token::IDENTIFIER)
+        params << consume(Token::IDENTIFIER)
         while current.is?(Token::COMMA)
           consume(Token::COMMA)
-          consume(Token::IDENTIFIER)
+          params << consume(Token::IDENTIFIER)
         end
       end
       consume(Token::RPAREN)
+      fn.params = params
+
+      fn.body = parse_block
+      fn
+    end
+
+    def parse_block
       consume(Token::LBRACE)
+      block = AST::Block.new
+      while !current.is?(Token::RBRACE)
+        expr = parse_expr_recursively
+        block << expr unless expr.nil?
+        consume
+      end
+      unexpected_token_error(build_token(:eof)) if current.type == :eof
       consume(Token::RBRACE)
-      # binding.pry
-      {}
+
+      block
     end
 
     def parse_var
       consume(Token::VAR)
-      c = consume(Token::IDENTIFIER)
+      identifier = AST::Identifier.new(consume(Token::IDENTIFIER).lexeme)
       if end_of_line?(current)
-        identifier = AST::Identifier.new(c)
         AST::VarBinding.new(identifier, AST::Nil.new())
+      else
+        consume(Token::EQUAL)
+        AST::VarBinding.new(identifier, parse_expr_recursively)
       end
     end
 
