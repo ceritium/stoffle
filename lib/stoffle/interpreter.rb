@@ -76,10 +76,50 @@ module Stoffle
       fn
     end
 
+    def interpret_function_call(fn_call)
+      fn_def = env[fn_call.name]
+      stack_frame = Stoffle::Runtime::StackFrame.new(fn_def, fn_call)
+      assign_function_args_to_params(stack_frame)
+      # Executing the function body.
+      call_stack << stack_frame
+      value = interpret_nodes(fn_def.body.expressions)
+      call_stack.pop
+      value
+    end
+
+    def assign_function_args_to_params(stack_frame)
+      fn_def = stack_frame.fn_def
+      fn_call = stack_frame.fn_call
+
+      given = fn_call.args.length
+      expected = fn_def.params.length
+      if given != expected
+        raise Stoffle::Error::Runtime::WrongNumArg.new(fn_def.function_name_as_str, given, expected)
+      end
+
+      # Applying the values passed in this particular function call to the respective defined parameters.
+      if fn_def.params != nil
+        fn_def.params.each_with_index do |param, i|
+          if env.has_key?(param.name)
+            # A global variable is already defined. We assign the passed in value to it.
+            env[param.name] = interpret_node(fn_call.args[i])
+          else
+            # A global variable with the same name doesn't exist. We create a new local variable.
+            stack_frame.env[param.name] = interpret_node(fn_call.args[i])
+          end
+        end
+      end
+    end
+
     def interpret_identifier(identifier)
       if env.has_key?(identifier.name)
+        # Global variable.
         env[identifier.name]
+      elsif call_stack.length > 0 && call_stack.last.env.has_key?(identifier.name)
+        # Local variable.
+        call_stack.last.env[identifier.name]
       else
+        # Undefined variable.
         raise Stoffle::Error::Runtime::UndefinedVariable.new(identifier.name)
       end
     end

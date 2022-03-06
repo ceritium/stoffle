@@ -3,6 +3,7 @@ class Stoffle::AST::Identifier < Stoffle::AST::Expression
 
   # TODO This list is incomplete. Complete after some aspects of the parser become clearer.
   EXPECTED_NEXT_TOKENS = [
+    :")",
     :"\n",
     :+,
     :-,

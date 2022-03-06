@@ -53,11 +53,6 @@ module Stoffle
       next_p < tokens.length
     end
 
-    def nxt_not_terminator?
-      !end_of_line?(nxt)
-      # nxt && !end_of_line?(nxt)
-    end
-
     def advance
       self.next_p += 1 unless at_end?
       previous
@@ -157,10 +152,10 @@ module Stoffle
       fn = AST::FunctionDefinition.new
       params = []
       if current.is?(Token::IDENTIFIER)
-        params << consume(Token::IDENTIFIER)
+        params << AST::Identifier.new(consume(Token::IDENTIFIER).lexeme)
         while current.is?(Token::COMMA)
           consume(Token::COMMA)
-          params << consume(Token::IDENTIFIER)
+          params << AST::Identifier.new(consume(Token::IDENTIFIER).lexeme)
         end
       end
       consume(Token::RPAREN)
@@ -168,6 +163,22 @@ module Stoffle
 
       fn.body = parse_block
       fn
+    end
+
+    def parse_fn_call
+      identifier = consume(Token::IDENTIFIER)
+      consume(Token::LPAREN)
+      params = []
+      params << parse_expr_recursively
+
+      while nxt.is?(Token::COMMA)
+        consume
+        consume(Token::COMMA)
+        params << parse_expr_recursively
+        consume
+      end
+      consume(Token::RPAREN)
+      AST::FunctionCall.new(identifier.lexeme, params)
     end
 
     def parse_block
@@ -178,7 +189,7 @@ module Stoffle
         block << expr unless expr.nil?
         consume
       end
-      unexpected_token_error(build_token(:eof)) if current.type == :eof
+      unexpected_token_error(build_token(Token::EOF)) if current.is?(Token::EOF)
       consume(Token::RBRACE)
 
       block
@@ -188,7 +199,7 @@ module Stoffle
       consume(Token::VAR)
       identifier = AST::Identifier.new(consume(Token::IDENTIFIER).lexeme)
       if end_of_line?(current)
-        AST::VarBinding.new(identifier, AST::Nil.new())
+        AST::VarBinding.new(identifier, AST::Nil.new)
       else
         consume(Token::EQUAL)
         AST::VarBinding.new(identifier, parse_expr_recursively)
@@ -204,6 +215,8 @@ module Stoffle
     def parse_identifier
       if lookahead.is?(Token::EQUAL)
         parse_var_binding
+      elsif lookahead.is?(Token::LPAREN)
+        parse_fn_call
       else
         ident = AST::Identifier.new(current.lexeme)
         check_syntax_compliance(ident)
@@ -220,7 +233,6 @@ module Stoffle
 
       unexpected_token_error
     end
-
 
     def parse_number
       AST::Number.new(current.literal)

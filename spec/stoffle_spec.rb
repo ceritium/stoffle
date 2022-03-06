@@ -4,9 +4,18 @@ RSpec.describe Stoffle do
   end
 
   it 'accepts external env' do
+    # expect(Stoffle.run('a()', env: { 'a' => -> () { 22 } })).to eq(22)
     expect(Stoffle.run('a', env: { 'a' => 22 })).to eq(22)
     expect(Stoffle.run('a * 2', env: { 'a' => 22 })).to eq(44)
   end
+
+  it {
+    r = Stoffle.run('
+      var c = fn(a,b) { a + b }
+      c(1,c(2,3))
+                ')
+    expect(r).to eq(6)
+  }
 
   it { Stoffle.run('var c = fn(a,b) { a + b }
                    c'
@@ -123,9 +132,27 @@ RSpec.describe Stoffle do
                                    Stoffle::Token.new(:eof, '', nil, Location.new(0, 6, 1))
                                  ])
     end
+
+    it 'tokenizes a fn call' do
+      lexer = Stoffle::Lexer.new('a(22)')
+      lexer.start_tokenization
+      expect(lexer.tokens).to eq([
+                                   Stoffle::Token.new(:identifier, 'a', nil,  Location.new(0, 0, 1)),
+                                   Stoffle::Token.new(:"(", '(', nil,         Location.new(0, 1, 1)),
+                                   Stoffle::Token.new(:number, '22', 22.0,    Location.new(0, 2, 2)),
+                                   Stoffle::Token.new(:")", ')', nil,         Location.new(0, 4, 1)),
+                                   Stoffle::Token.new(:eof, '', nil,          Location.new(0, 5, 1))
+                                 ])
+    end
   end
 
   describe 'Parser' do
+    it 'parses a fn call' do
+      lexer = Stoffle::Lexer.new('a(22, b)')
+      parser = Stoffle::Parser.new(lexer.start_tokenization)
+      parser.parse
+      expect(parser.errors).to be_empty
+    end
     it 'parses var without value' do
       lexer = Stoffle::Lexer.new("var a
                                  2 + 2")
