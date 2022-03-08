@@ -12,7 +12,7 @@ RSpec.describe Stoffle do
   it {
     r = Stoffle.run('
       var c = fn(a,b) { a + b }
-      c(1,c(2,3))
+      c(c(1,c(1,c(1,0))),c(c(1,1),1))
                 ')
     expect(r).to eq(6)
   }
@@ -175,5 +175,16 @@ c * 2}')
       parser.parse
       expect(parser.errors).to be_empty
     end
+
+  it {
+    code = 'c = fn(a,b) { 1 }
+            c(c(1,2),2)'
+    lexer = Stoffle::Lexer.new(code)
+    parser = Stoffle::Parser.new(lexer.start_tokenization)
+    parser.parse
+    expect(parser.errors).to be_empty
+  }
+
+
   end
 end

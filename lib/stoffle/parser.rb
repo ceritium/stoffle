@@ -28,6 +28,7 @@ module Stoffle
       @ast = AST::Program.new
       @next_p = 0
       @errors = []
+      @level = 0
     end
 
     def parse
@@ -62,8 +63,9 @@ module Stoffle
       if type.nil? || check(*type)
         return advance
       end
-
-      unexpected_token_error(type) if type
+      if type
+        unexpected_token_error(type)
+      end
     end
 
     def check(*types)
@@ -167,18 +169,30 @@ module Stoffle
 
     def parse_fn_call
       identifier = consume(Token::IDENTIFIER)
-      consume(Token::LPAREN)
-      params = []
-      params << parse_expr_recursively
+      params = parse_function_call_args
+      AST::FunctionCall.new(identifier.lexeme, params)
+    end
+
+    def parse_function_call_args
+      args = []
+
+      # Function call without arguments.
+      if nxt.is?(Token::RPAREN)
+        consume(Token::RPAREN)
+        return args
+      end
+
+      consume
+      args << parse_expr_recursively
 
       while nxt.is?(Token::COMMA)
         consume
         consume(Token::COMMA)
-        params << parse_expr_recursively
-        consume
+        args << parse_expr_recursively
       end
-      consume(Token::RPAREN)
-      AST::FunctionCall.new(identifier.lexeme, params)
+
+      return unless consume_if_nxt_is(build_token(:')', ')'))
+      args
     end
 
     def parse_block
